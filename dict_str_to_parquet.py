@@ -1,13 +1,25 @@
 # a streamlit application to covert a dictionary string dump (print(dict_data)) to a parquet file and download it
 import streamlit as st
 import pandas as pd
-from decimal import Decimal
+import numpy as np
+
+# for handling special data types
 import datetime
+from decimal import Decimal
+from psycopg2.extras import RealDictRow
 
 def dict_str_to_parquet(dict_str):
     try:
         # Convert the string representation of the dictionary to an actual dictionary
         dict_data = eval(dict_str)
+
+        try:
+            # recursively remove outer array-like structures if present and length is 1
+            while isinstance(dict_data, (list, tuple, set, RealDictRow)) and len(dict_data) == 1:
+                dict_data = dict_data[0]
+        except Exception as e:
+            st.warning(f"Could not simplify outer structure: {e}")
+
         # Convert the dictionary to a pandas DataFrame
         df = pd.DataFrame([dict_data])
         # Save the DataFrame to a parquet file
